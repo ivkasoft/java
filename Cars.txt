@@ -1,0 +1,48 @@
+public class Main {
+    public static void main(String[] args) {
+        // Създаваме масив от коли
+        Car[] cars = new Car[3];
+        cars[0] = new Car("Toyota", 100, 20, 5000);
+        cars[1] = new ElectricCar("Tesla", 120, 0, 10000, 80, 5);
+        cars[2] = new Car("Honda", 90, 15, 3000);
+
+        // Използваме цикъл за шофиране на всяка кола
+        for (Car car : cars) {
+            if (car instanceof ElectricCar) {
+                // Ако колата е ElectricCar, използваме driveElectric
+                ElectricCar electricCar = (ElectricCar) car;
+                electricCar.driveElectric(10);
+            } else {
+                // Ако колата е стандартна, използваме drive
+                car.drive(10);
+            }
+        }
+
+        // Допълнителни примери за зареждане и ускорение
+        cars[0].accelerate();
+        ((ElectricCar) cars[1]).charge();
+        cars[2].refuel(5);
+    }
+}
+
+
+
+
+Обяснение на метода main
+Създаваме клас Main, който създава обекти от тип Car и ElectricCar, и демонстрира полиморфизъм чрез масив от Car обекти.
+Създаваме масив cars, който съдържа както обекти от тип Car, така и от тип ElectricCar.
+С помощта на цикъл обхождаме масива и проверяваме типа на всеки обект с оператора instanceof.
+Ако обектът е от тип ElectricCar, използваме метода driveElectric.
+Ако обектът е от тип Car, използваме стандартния метод drive.
+Допълнително демонстрираме други методи като accelerate, charge, и refuel.
+Примерен изход
+При изпълнение на програмата може да получите следния изход:
+
+
+Toyota drove 10 km. Current mileage: 5010 km, Fuel left: 19.0 liters.
+Tesla drove 10 km on electric. Current mileage: 10010 km, Battery level: 78.0%.
+Honda drove 10 km. Current mileage: 3010 km, Fuel left: 14.0 liters.
+Toyota accelerated to 110 km/h.
+Tesla battery fully charged. Current battery level: 100%.
+Honda refueled. Current fuel: 19.0 liters.
+

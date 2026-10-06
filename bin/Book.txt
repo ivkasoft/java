@@ -1,0 +1,219 @@
+//Book
+
+public class Book {
+	private int id;
+    private int ISBN;
+    private String title;
+    private String author;
+    private String library;
+    private boolean available;
+    
+	public Book(int id, int iSBN, String title, String author, String library, boolean available) {
+		super();
+		this.id = id;
+		ISBN = iSBN;
+		this.title = title;
+		this.author = author;
+		this.library = library;
+		this.available = available;
+	}
+    
+	public String getAuthor(){
+    	return this.author;
+    }
+	
+    public String getTitle(){
+    	return this.title;
+    }
+    
+    public boolean getAvailable(){
+    	return this.available;
+    }
+    
+    public String getLibrary(){
+    	return this.library;
+    }
+    
+    public int getId(){
+    	return this.id;
+    }
+    
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+}
+
+
+
+
+//Server
+
+import java.io.PrintStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Scanner;
+
+public class Server{
+
+	public static void main(String[] args) throws IOException{
+		Book[] books = new Book[10];
+		books[0] = new Book(1, 2, "Necronomicon", "Az", "Library1", true);
+        books[1] = new Book(3, 4, "Kak da otgledame morkovi", "Ti", "Library2", false);
+        books[2] = new Book(5, 6, "Narychnik za chistene na ushi", "Toi", "Library3", false);
+        books[3] = new Book(7, 8, "Necronomicon", "Tq", "Library4", true);
+		
+		ServerSocket ss=new ServerSocket(5678);
+		
+		while (true) {
+            Socket socket = ss.accept();
+            new Thread(() -> {
+                try (
+                    PrintStream printout = new PrintStream(socket.getOutputStream());
+                    Scanner scan = new Scanner(socket.getInputStream())
+                ) {
+                    // Масив за книги за наемане и брой книги в него
+                    Book[] booksToRent = new Book[10];
+                    int rentCount = 0;
+
+                    while (scan.hasNextLine()) {
+                        int number = scan.nextInt();
+                        scan.nextLine();
+
+                        if (number == 1) {
+                            // Търсене на книга по заглавие
+                            printout.println("Enter book title:");
+                            String title = scan.nextLine();
+                            boolean found = false;
+
+                            for (int i = 0; i < books.length; i++) {
+                                if (books[i].getTitle().equalsIgnoreCase(title)) {
+                                    printout.printf("Library: %s, Available: %b%n",
+                                            books[i].getLibrary(), books[i].getAvailable());
+                                    found = true;
+                                }
+                            }
+
+                            if (!found) {
+                                printout.println("Book not found.");
+                            }
+                        } else if (number == 2) {
+                            // Добавяне на книга за наемане
+                            printout.println("Enter book ID:");
+                            int id = scan.nextInt();
+                            scan.nextLine();
+
+                            boolean found = false;
+                            for (int i = 0; i < books.length; i++) {
+                                if (books[i].getId() == id) {
+                                    found = true;
+                                    if (!books[i].getAvailable()) {
+                                        printout.println("Book is not available for rent.");
+                                    } else {
+                                        booksToRent[rentCount++] = books[i];
+                                        books[i].setAvailable(false);
+                                        printout.println("Book added to rent list.");
+                                    }
+                                    break;
+                                }
+                            }
+
+                            if (!found) {
+                                printout.println("Book not found.");
+                            }
+                        } else if (number == 3) {
+                            // Показване на всички книги в библиотека
+                            printout.println("Enter library name:");
+                            String libraryName = scan.nextLine();
+                            boolean found = false;
+
+                            for (int i = 0; i < books.length; i++) {
+                                if (books[i].getLibrary().equalsIgnoreCase(libraryName)) {
+                                    printout.printf("ID: %d, Title: %s, Author: %s, Available: %b%n",
+                                            books[i].getId(), books[i].getTitle(), books[i].getAuthor(), books[i].getAvailable());
+                                    found = true;
+                                }
+                            }
+
+                            if (!found) {
+                                printout.println("No books found in this library.");
+                            }
+                        } else {
+                            printout.println("Invalid command.");
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
+
+	}
+
+}
+
+
+
+//Client 
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.Socket;
+import java.util.Scanner;
+
+public class Client {
+    public static void main(String[] args) {
+        try (Socket socket = new Socket("localhost", 5678);
+             Scanner serverInput = new Scanner(socket.getInputStream());
+             PrintStream serverOutput = new PrintStream(socket.getOutputStream());
+             Scanner userInput = new Scanner(System.in)) {
+
+            System.out.println("Connected to the server.");
+            
+            while (true) {
+                System.out.println("\nChoose an option:");
+                System.out.println("1 - Search for a book by title");
+                System.out.println("2 - Add a book to your rent list by ID");
+                System.out.println("3 - Show all books in a library");
+                System.out.println("4 - Exit");
+
+                int choice = userInput.nextInt();
+                userInput.nextLine(); // Consume newline character
+                serverOutput.println(choice);
+
+                if (choice == 1) {
+                    System.out.println("Enter book title:");
+                    String title = userInput.nextLine();
+                    serverOutput.println(title);
+                } else if (choice == 2) {
+                    System.out.println("Enter book ID:");
+                    int id = userInput.nextInt();
+                    userInput.nextLine(); // Consume newline character
+                    serverOutput.println(id);
+                } else if (choice == 3) {
+                    System.out.println("Enter library name:");
+                    String libraryName = userInput.nextLine();
+                    serverOutput.println(libraryName);
+                } else if (choice == 4) {
+                    System.out.println("Exiting...");
+                    break;
+                } else {
+                    System.out.println("Invalid choice. Try again.");
+                }
+
+                // Read server response
+                while (serverInput.hasNextLine()) {
+                    String response = serverInput.nextLine();
+                    if (response.isEmpty()) {
+                        break; // Stop reading when server sends an empty line
+                    }
+                    System.out.println(response);
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("Error: Unable to connect to the server.");
+            e.printStackTrace();
+        }
+    }
+}
